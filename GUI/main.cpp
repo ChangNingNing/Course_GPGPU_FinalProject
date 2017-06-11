@@ -11,6 +11,7 @@ typedef struct {
 } Object;
 
 Object obj[MAXN];
+FILE *fptr;
 int RadiusN = 6;
 float Radius[] = { 1, 2, 4, 8, 16, 32};
 float RadiusRGB[][3]={	0.5, 0.0, 0.0,
@@ -79,9 +80,8 @@ void Display( void ){
 
 void Idle( void ){
 	float timeFrame;
-	for (int i=0; i<N; i++)
-		scanf("%f %f %f %f %d", &obj[i].pos[0], &obj[i].pos[1], &obj[i].pos[2], &obj[i].r, &obj[i].isCollision);
-	scanf("%f", &timeFrame);
+	fread( obj, sizeof(Object), N, fptr);
+	fread( &timeFrame, sizeof(float), 1, fptr);
 
 	glutPostRedisplay();
 	Sleep((unsigned int)timeFrame * 1000);
@@ -92,7 +92,14 @@ int main(int argc, char *argv[]){
 	{
 		for (int i=0; i<RadiusN; i++)
 			RadiusMap[(int)Radius[i]] = i;
-		scanf("%d %d", &Boundary, &N);
+		fptr = fopen("log", "rb");
+		if (!fptr){
+			printf("open log file error.\n");
+			exit(1);
+		}
+		fread( &Boundary, sizeof(int), 1, fptr);
+		fread( &N, sizeof(int), 1, fptr);
+
 		eye[0] = eye[1] = (float)Boundary / 2;
 		eye[2] = (float)Boundary * 2;
 		center[0] = center[1] = center[2] = (float)Boundary / 2;

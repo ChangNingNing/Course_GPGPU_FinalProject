@@ -55,7 +55,7 @@ __global__ void CudaMoveObject( Object *cuObj, int N, int Boundary, float FT){
 		cuObj[id].v[1] += g*FT;
 	}
 }
-//mySAP kernel
+// mySAP's kernel
 #define sqr(a) (a)*(a)
 __global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
     int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -90,6 +90,18 @@ __global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
 
 }
 
+// myPrint's kernel
+__global__ void CudaPrintObject(FileObject *cuFileObj, Object *cuObj, int N){
+	int id = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (id >= N) return;
+	cuFileObj[id].pos[0] = cuObj[id].pos[0];
+	cuFileObj[id].pos[1] = cuObj[id].pos[1];
+	cuFileObj[id].pos[2] = cuObj[id].pos[2];
+	cuFileObj[id].r = cuObj[id].r;
+	cuFileObj[id].isCollision = cuObj[id].isCollision;
+}
+
 /**/
 
 #define BlockSize 256
@@ -103,6 +115,15 @@ void mySort( Object *cuObj, int *cuSweepDir, int N){
 void mySAP( Object *cuObj, int *cuSweepDir, int N){
 	dim3 grid(CeilDiv(N, BlockSize), 1), block(BlockSize, 1);
 	CudaSAP<<< grid, block >>>(cuObj, cuSweepDir, N);
+}
+
+void myPrint( FILE *fptr, Object *cuObj, FileObject *cuFileObj, FileObject *fileObj, int N, float frameTime){
+	dim3 grid(CeilDiv(N, BlockSize), 1), block(BlockSize, 1);
+	CudaPrintObject<<< grid, block >>>(cuFileObj, cuObj, N);
+	cudaMemcpy( fileObj, cuFileObj, sizeof(FileObject)*N, cudaMemcpyDeviceToHost);
+
+	fwrite( fileObj, sizeof(FileObject), N, fptr);
+	fwrite( &frameTime, sizeof(float), 1, fptr);
 }
 
 void myMoveObject( Object *cuObj, int N, int Boundary, float FT){
