@@ -57,7 +57,7 @@ __global__ void CudaMoveObject( Object *cuObj, int N, int Boundary, float FT){
 }
 //mySAP kernel
 #define sqr(a) (a)*(a)
-__global__ void CudaSAP(Object *cuObj, int SweepDir[3], int N){
+__global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
     int id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(id >= N) return;
@@ -68,9 +68,9 @@ __global__ void CudaSAP(Object *cuObj, int SweepDir[3], int N){
     myR = cuObj[id].r;
 
     int axis;
-    if(SweepDir[0])
+    if(cuSweepDir[0])
         axis = 0;
-    else if(SweepDir[1])
+    else if(cuSweepDir[1])
         axis = 1;
     else
         axis = 2;
@@ -94,15 +94,15 @@ __global__ void CudaSAP(Object *cuObj, int SweepDir[3], int N){
 
 #define BlockSize 256
 
-void myFindSweepDirection( Object *cuObj, int SweepDir[3], int N){}
+void myFindSweepDirection( Object *cuObj, int *SweepDir, int N){}
 
-void mySort( Object *cuObj, int SweepDir[3], int N){
+void mySort( Object *cuObj, int *cuSweepDir, int N){
 	thrust::sort(thrust::device, cuObj, cuObj+N, myCompare());
 }
 
-void mySAP( Object *cuObj, int SweepDir[3], int N){
+void mySAP( Object *cuObj, int *cuSweepDir, int N){
 	dim3 grid(CeilDiv(N, BlockSize), 1), block(BlockSize, 1);
-    CudaSAP<<< grid, block >>>(cuObj, SweepDir, N);
+	CudaSAP<<< grid, block >>>(cuObj, cuSweepDir, N);
 }
 
 void myMoveObject( Object *cuObj, int N, int Boundary, float FT){

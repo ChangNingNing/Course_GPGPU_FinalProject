@@ -3,7 +3,7 @@ typedef struct {
 	int isCollision;
 } Object;
 
-void myFindSweepDirection( Object *cuObj, int SweepDir[3], int N);
-void mySort( Object *cuObj, int SweepDir[3], int N);
-void mySAP( Object *cuObj, int SweepDir[3], int N);
+void myFindSweepDirection( Object *cuObj, int *cuSweepDir, int N);
+void mySort( Object *cuObj, int *cuSweepDir, int N);
+void mySAP( Object *cuObj, int *cuSweepDir, int N);
 void myMoveObject( Object *cuObj, int N, int Boundary, float FrameTime);
