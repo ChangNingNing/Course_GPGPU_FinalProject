@@ -76,6 +76,7 @@ __global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
         axis = 2;
 
     float bound = myPos[axis] + myR;
+	int flag = 0;
     for(int i = id + 1; i < N && (cuObj[i].pos[axis] - cuObj[i].r) <= bound ; i++){
         float tmpPos[3], tmpR;
         tmpPos[0] = cuObj[i].pos[0];
@@ -83,10 +84,13 @@ __global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
         tmpPos[2] = cuObj[i].pos[2];
         tmpR = cuObj[i].r;
         float dist = sqr(tmpPos[0]-myPos[0])+sqr(tmpPos[1]-myPos[1])+sqr(tmpPos[2]-myPos[2]);
-        if(dist <= (sqr(myR) + sqr(tmpR)) )
+        if(dist <= (sqr(myR) + sqr(tmpR)) ){
             cuObj[i].isCollision = 1;
-
+			flag = 1;
+		}
     }
+	if(flag)
+		cuObj[id].isCollision = 1;
 
 }
 
