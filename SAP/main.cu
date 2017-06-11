@@ -36,7 +36,9 @@ int main(){
 			obj[i].pos[0] = (rand() % (int)(Boundary-2*obj[i].r)) + obj[i].r;	// X
 			obj[i].pos[1] = Boundary - obj[i].r - (rand()%(Boundary/10));		// Y
 			obj[i].pos[2] = (rand() % (int)(Boundary-2*obj[i].r)) + obj[i].r;	// Z
-			obj[i].v[0] = obj[i].v[1] = obj[i].v[2] = 0;
+			obj[i].v[0] = (rand() % (Boundary/5+1)) - Boundary/10;
+			obj[i].v[1] = 0;
+			obj[i].v[2] = (rand() % (Boundary/5+1)) - Boundary/10;
 			obj[i].isCollision = 0;
 		}
 		cudaMalloc( &cuObj, sizeof(Object)*MAXN);
@@ -67,7 +69,7 @@ int main(){
 			cudaMemcpy( obj, cuObj, sizeof(Object)*MAXN, cudaMemcpyDeviceToHost);
 			myPrint( Boundary, MAXN, obj, (float)duration/CLOCKS_PER_SEC);
 
-			myMoveObject( cuObj, MAXN, FrameTime);
+			myMoveObject( cuObj, MAXN, Boundary, FrameTime);
 		}
 	}
 
