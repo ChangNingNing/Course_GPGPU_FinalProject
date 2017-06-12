@@ -22,7 +22,7 @@ float RadiusRGB[][3]={	0.5, 0.0, 0.0,
 						0.0, 0.5, 0.5};
 int RadiusMap[33] = {0};
 
-int Boundary, N;
+int Boundary, N, frameNum;
 
 GLdouble eye[3] = { 0, 0, 0};
 GLdouble center[3] = { 0, 0, 0};
@@ -51,7 +51,7 @@ void myDrawBoundary(){
 }
 
 void myDrawSimulation(){
-	for (int i=0; i<N; i++){
+	for (int i=0; i<frameNum; i++){
 		int cIndex = RadiusMap[(int)obj[i].r];
 		glPushMatrix();
 			glColor3f( RadiusRGB[cIndex][0], RadiusRGB[cIndex][1], RadiusRGB[cIndex][2]);
@@ -79,12 +79,16 @@ void Display( void ){
 }
 
 void Idle( void ){
-	float timeFrame;
-	fread( obj, sizeof(Object), N, fptr);
-	fread( &timeFrame, sizeof(float), 1, fptr);
+	float frameTime = 0;
+	fread( &frameNum, sizeof(int), 1, fptr);
+	fread( obj, sizeof(Object), frameNum, fptr);
+	fread( &frameTime, sizeof(float), 1, fptr);
+
+	printf("%d %f\n", frameNum, frameTime);
+	fflush(stdout);
 
 	glutPostRedisplay();
-	Sleep((unsigned int)timeFrame * 1000);
+	Sleep((unsigned int)frameTime * 1000);
 }
 
 int main(int argc, char *argv[]){
@@ -99,6 +103,7 @@ int main(int argc, char *argv[]){
 		}
 		fread( &Boundary, sizeof(int), 1, fptr);
 		fread( &N, sizeof(int), 1, fptr);
+		frameNum = N;
 
 		eye[0] = eye[1] = (float)Boundary / 2;
 		eye[2] = (float)Boundary * 2;

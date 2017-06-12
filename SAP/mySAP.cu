@@ -1,5 +1,6 @@
 #include "mySAP.h"
 #include <thrust/sort.h>
+#include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 
 __device__ __host__ int CeilDiv(int a, int b) { return (a-1)/b + 1; }
@@ -76,7 +77,7 @@ __global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
         axis = 2;
 
     float bound = myPos[axis] + myR;
-	int flag = 0;
+    int flag = 0;
     for(int i = id + 1; i < N && (cuObj[i].pos[axis] - cuObj[i].r) <= bound ; i++){
         float tmpPos[3], tmpR;
         tmpPos[0] = cuObj[i].pos[0];
@@ -87,14 +88,54 @@ __global__ void CudaSAP(Object *cuObj, int *cuSweepDir, int N){
         if(dist <= (sqr(myR) + sqr(tmpR)) ){
             cuObj[i].isCollision = 1;
 			flag = 1;
-		}
+        }
     }
 	if(flag)
 		cuObj[id].isCollision = 1;
-
 }
 
 // myPrint's kernel
+__global__ void CudaZBuffer( int *cuTmp, Object *cuObj, int N, int Boundary){
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	int idy = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (idx >= Boundary || idy >= Boundary) return;
+
+	int idz = Boundary * 2 - 1;
+
+	int index = -1;
+	float minZ = Boundary*2;
+	for (int i=0; i<N; i++){
+		float dist = cuObj[i].pos[0] - idx;
+		if (dist > 32) break;
+
+		dist = sqr(dist) + sqr(cuObj[i].pos[1]-idy);
+//		if (dist > sqr(cuObj[i].r)) continue;
+
+		dist = sqrt(sqr(cuObj[i].pos[2]-idz) + dist);
+		dist -= cuObj[i].r;
+		if (dist < minZ){
+			minZ = dist;
+			index = i;
+		}
+	}
+	if (index >= 0) cuTmp[index] = 1;
+}
+
+__global__ void CudaPruneObject(FileObject *cuFileObj, Object *cuObj, int *cuTmp, int N){
+	int id = blockIdx.x * blockDim.x + threadIdx.x;
+	if (id >= N) return;
+
+	int index = cuTmp[id];
+	if (id != 0 && index == cuTmp[id-1]) return;
+
+	cuFileObj[index].pos[0] = cuObj[id].pos[0];
+	cuFileObj[index].pos[1] = cuObj[id].pos[1];
+	cuFileObj[index].pos[2] = cuObj[id].pos[2];
+	cuFileObj[index].r = cuObj[id].r;
+	cuFileObj[index].isCollision = cuObj[id].isCollision;
+}
+
 __global__ void CudaPrintObject(FileObject *cuFileObj, Object *cuObj, int N){
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -121,13 +162,36 @@ void mySAP( Object *cuObj, int *cuSweepDir, int N){
 	CudaSAP<<< grid, block >>>(cuObj, cuSweepDir, N);
 }
 
-void myPrint( FILE *fptr, Object *cuObj, FileObject *cuFileObj, FileObject *fileObj, int N, float frameTime){
-	dim3 grid(CeilDiv(N, BlockSize), 1), block(BlockSize, 1);
-	CudaPrintObject<<< grid, block >>>(cuFileObj, cuObj, N);
-	cudaMemcpy( fileObj, cuFileObj, sizeof(FileObject)*N, cudaMemcpyDeviceToHost);
+void myPrint(
+	FILE *fptr, Object *cuObj, FileObject *cuFileObj, FileObject *fileObj,
+	int N, int Boundary, float frameTime
+){
+/*
+	int *cuTmp;
+	cudaMalloc( &cuTmp, sizeof(int)*N);
+	cudaMemset( cuTmp, 0, sizeof(int)*N);
 
-	fwrite( fileObj, sizeof(FileObject), N, fptr);
+	dim3 grid(CeilDiv(Boundary, 32), CeilDiv(Boundary, 32));
+	dim3 block(32, 32);
+	// z-buffer concept
+	CudaZBuffer<<< grid, block>>>( cuTmp, cuObj, N, Boundary);
+	thrust::inclusive_scan(thrust::device, cuTmp, cuTmp+N, cuTmp);
+*/
+	dim3 grid2(CeilDiv(N, BlockSize), 1), block2(BlockSize, 1);
+//	CudaPruneObject<<< grid2, block2 >>>(cuFileObj, cuObj, cuTmp, N);
+	CudaPrintObject<<< grid2, block2 >>>(cuFileObj, cuObj, N);
+
+	int nFileObj = N;
+//	cudaMemcpy( &nFileObj, cuTmp+N-1, sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy( fileObj, cuFileObj, sizeof(FileObject)*nFileObj, cudaMemcpyDeviceToHost);
+
+//	printf("%d %lf\n", nFileObj, frameTime);
+
+	fwrite( &nFileObj, sizeof(int), 1, fptr);
+	fwrite( fileObj, sizeof(FileObject), nFileObj, fptr);
 	fwrite( &frameTime, sizeof(float), 1, fptr);
+
+//	cudaFree(cuTmp);
 }
 
 void myMoveObject( Object *cuObj, int N, int Boundary, float FT){

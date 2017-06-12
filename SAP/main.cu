@@ -4,17 +4,15 @@
 #include <time.h>
 #include "mySAP.h"
 
-//#define DEBUG
-
 int main(){
 	// Define
-	static const int MAXN = 10000;
+	static const int MAXN = 1000000;
 	static const int Boundary = 1000;
 	static const int RadiusN = 6;
 	static const float Radius[] = { 1, 2, 4, 8, 16, 32};
 	static const float FPS = 50;
 	static const float FrameTime = (float)1 / FPS;
-	static const float SimulationTime = 5;
+	static const float SimulationTime = 20;
 
 	// Allocation
 	static Object obj[MAXN];
@@ -51,12 +49,6 @@ int main(){
 		fwrite( &MAXN, sizeof(int), 1, fptr);
 	}
 
-	#ifdef DEBUG
-	{
-		printf("FrameTime = %lfs\n", FrameTime);
-	}
-	#endif
-
 	// Simulation
 	clock_t begin = clock();
 	{
@@ -70,7 +62,8 @@ int main(){
 			}
 			duration = clock() - duration;
 
-			myPrint( fptr, cuObj, cuFileObj, fileObj, MAXN, (float)duration/CLOCKS_PER_SEC);
+			printf("%f\n", (float)1/((float)duration/CLOCKS_PER_SEC));
+			myPrint( fptr, cuObj, cuFileObj, fileObj, MAXN, Boundary, (float)duration/CLOCKS_PER_SEC);
 			myMoveObject( cuObj, MAXN, Boundary, FrameTime);
 		}
 	}
