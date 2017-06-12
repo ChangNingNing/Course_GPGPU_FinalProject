@@ -20,7 +20,6 @@ int main(){
 	static FileObject fileObj[MAXN];
 	static FileObject *cuFileObj;
 	static int SweepDir[3] = { 1, 0, 0};
-	static int *cuSweepDir;
 
 	FILE *fptr = fopen("log", "wb");
 
@@ -42,9 +41,6 @@ int main(){
 
 		cudaMalloc( &cuFileObj, sizeof(FileObject)*MAXN);
 
-		cudaMalloc( &cuSweepDir, sizeof(int)*3);
-		cudaMemcpy( cuSweepDir, SweepDir, sizeof(int)*3, cudaMemcpyHostToDevice);
-
 		fwrite( &Boundary, sizeof(int), 1, fptr);
 		fwrite( &MAXN, sizeof(int), 1, fptr);
 	}
@@ -56,9 +52,9 @@ int main(){
 			clock_t duration = clock();
 			// SAP
 			{
-				myFindSweepDirection( cuObj, cuSweepDir, MAXN);
-				mySort( cuObj, cuSweepDir, MAXN);
-				mySAP( cuObj, cuSweepDir, MAXN);
+				myFindSweepDirection( cuObj, SweepDir, MAXN);
+				mySort( cuObj, SweepDir, MAXN);
+				mySAP( cuObj, SweepDir, MAXN);
 			}
 			duration = clock() - duration;
 
@@ -72,7 +68,6 @@ int main(){
 	{
 		cudaFree( cuObj);
 		cudaFree( cuFileObj);
-		cudaFree( cuSweepDir);
 		fclose(fptr);
 	}
 	return 0;
