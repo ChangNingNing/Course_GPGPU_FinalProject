@@ -1,4 +1,5 @@
 #include "mySAP.h"
+#include <thrust/transform_reduce.h>
 #include <thrust/sort.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
@@ -6,11 +7,40 @@
 __device__ __host__ int CeilDiv(int a, int b) { return (a-1)/b + 1; }
 
 /* Cuda Function */
+// myFindSweepDirection's kernel
+struct Obj2Diff{
+	const int index, num;
+	const float mean;
+	Obj2Diff(const int index, const int num, const float mean):index(index), num(num),mean(mean) {}
+	__host__ __device__
+	float operator()(const Object &x) const{
+		return ((x.pos[index] - mean)*(x.pos[index] - mean)) / num;
+	}
+};
+
+struct Obj2Float{
+	const int index, num;
+	Obj2Float(const int index, const int num): index(index), num(num) {}
+	__host__ __device__
+	float operator()(const Object &x) const{
+		return x.pos[index] / num;
+	}
+};
+
+struct myFloatAdd{
+	__host__ __device__
+	float operator()(const float& a, const float& b){
+		return a + b;
+	}
+};
+
 // mySort's kernel
 struct myCompare{
+	const int index;
+	myCompare(const int index): index(index) {}
 	__host__ __device__
 	bool operator()(const Object& a, const Object& b){
-		return a.pos[0] < b.pos[0];
+		return a.pos[index] < b.pos[index];
 	}
 };
 
@@ -56,6 +86,7 @@ __global__ void CudaMoveObject( Object *cuObj, int N, int Boundary, float FT){
 		cuObj[id].v[1] += g*FT;
 	}
 }
+
 // mySAP's kernel
 #define sqr(a) (a)*(a)
 __global__ void CudaSAP(Object *cuObj, int axis, int N){
@@ -143,22 +174,29 @@ __global__ void CudaPrintObject(FileObject *cuFileObj, Object *cuObj, int N){
 
 #define BlockSize 256
 
-void myFindSweepDirection( Object *cuObj, int *SweepDir, int N){}
-
-void mySort( Object *cuObj, int *SweepDir, int N){
-	thrust::sort(thrust::device, cuObj, cuObj+N, myCompare());
+void myFindSweepDirection( Object *cuObj, int *SweepDir, int N){
+	float mean, var, maxVar = -1;
+	int coor;
+	for (int i=0; i<3; i++){
+		mean = thrust::transform_reduce(thrust::device, cuObj, cuObj+N,
+											Obj2Float(i, N), 0.0f, myFloatAdd());
+		var = thrust::transform_reduce(thrust::device, cuObj, cuObj+N,
+											Obj2Diff(i, N, mean), 0.0f, myFloatAdd());
+		if (var > maxVar){
+			maxVar = var;
+			coor = i;
+		}
+	}
+	*SweepDir = coor;
 }
 
-void mySAP( Object *cuObj, int *SweepDir, int N){
+void mySort( Object *cuObj, int SweepDir, int N){
+	thrust::sort(thrust::device, cuObj, cuObj+N, myCompare(SweepDir));
+}
+
+void mySAP( Object *cuObj, int SweepDir, int N){
 	dim3 grid(CeilDiv(N, BlockSize), 1), block(BlockSize, 1);
-	int axis;
-	if(SweepDir[0])	
-		axis = 0;
-	else if (SweepDir[1])
-		axis = 1;
-	else
-		axis = 2;
-	CudaSAP<<< grid, block >>>(cuObj, axis, N);
+	CudaSAP<<< grid, block >>>(cuObj, SweepDir, N);
 }
 
 void myPrint(

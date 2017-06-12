@@ -10,7 +10,7 @@ typedef struct {
 } FileObject;
 
 void myFindSweepDirection( Object *cuObj, int *SweepDir, int N);
-void mySort( Object *cuObj, int *SweepDir, int N);
-void mySAP( Object *cuObj, int *SweepDir, int N);
+void mySort( Object *cuObj, int SweepDir, int N);
+void mySAP( Object *cuObj, int SweepDir, int N);
 void myPrint( FILE *fptr, Object *cuObj, FileObject *cuFileObj, FileObject *fileObj, int N, int Boundary, float frameTime);
 void myMoveObject( Object *cuObj, int N, int Boundary, float FrameTime);

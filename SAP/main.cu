@@ -6,7 +6,7 @@
 
 int main(){
 	// Define
-	static const int MAXN = 1000000;
+	static const int MAXN = 1000;
 	static const int Boundary = 1000;
 	static const int RadiusN = 6;
 	static const float Radius[] = { 1, 2, 4, 8, 16, 32};
@@ -19,7 +19,7 @@ int main(){
 	static Object *cuObj;
 	static FileObject fileObj[MAXN];
 	static FileObject *cuFileObj;
-	static int SweepDir[3] = { 1, 0, 0};
+	static int SweepDir = 0;
 
 	FILE *fptr = fopen("log", "wb");
 
@@ -57,7 +57,7 @@ int main(){
 			float partialTime = 0;
 			{
 				cudaEventRecord(start);
-				myFindSweepDirection( cuObj, SweepDir, MAXN);
+				myFindSweepDirection( cuObj, &SweepDir, MAXN); // Find Sweep Dirention
 				cudaEventRecord(stop);
 				cudaEventSynchronize(stop);
 				cudaEventElapsedTime(&milliseconds, start, stop);
@@ -66,7 +66,7 @@ int main(){
 				printf("FindDir-%f\n", milliseconds);
 
 				cudaEventRecord(start);
-				mySort( cuObj, SweepDir, MAXN);
+				mySort( cuObj, SweepDir, MAXN); // Sort
 				cudaEventRecord(stop);
 				cudaEventSynchronize(stop);
 				cudaEventElapsedTime(&milliseconds, start, stop);
@@ -75,7 +75,7 @@ int main(){
 				printf("Sort-%f\n", milliseconds);
 
 				cudaEventRecord(start);
-				mySAP( cuObj, SweepDir, MAXN);
+				mySAP( cuObj, SweepDir, MAXN); // SAP
 				cudaEventRecord(stop);
 				cudaEventSynchronize(stop);
 				cudaEventElapsedTime(&milliseconds, start, stop);
