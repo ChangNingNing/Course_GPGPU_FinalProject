@@ -46,20 +46,45 @@ int main(){
 	}
 
 	// Simulation
-	clock_t begin = clock();
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	float milliseconds = 0;
+	float totalTime = 0;
 	{
-		while ( ((float)(clock()-begin) / CLOCKS_PER_SEC) <= SimulationTime ){
-			clock_t duration = clock();
+		while ( (totalTime / 1000) <= SimulationTime ){
 			// SAP
+			float partialTime = 0;
 			{
+				cudaEventRecord(start);
 				myFindSweepDirection( cuObj, SweepDir, MAXN);
-				mySort( cuObj, SweepDir, MAXN);
-				mySAP( cuObj, SweepDir, MAXN);
-			}
-			duration = clock() - duration;
+				cudaEventRecord(stop);
+				cudaEventSynchronize(stop);
+				cudaEventElapsedTime(&milliseconds, start, stop);
+				totalTime += milliseconds;
+				partialTime += milliseconds;
+				printf("FindDir-%f\n", milliseconds);
 
-			printf("%f\n", (float)1/((float)duration/CLOCKS_PER_SEC));
-			myPrint( fptr, cuObj, cuFileObj, fileObj, MAXN, Boundary, (float)duration/CLOCKS_PER_SEC);
+				cudaEventRecord(start);
+				mySort( cuObj, SweepDir, MAXN);
+				cudaEventRecord(stop);
+				cudaEventSynchronize(stop);
+				cudaEventElapsedTime(&milliseconds, start, stop);
+				totalTime += milliseconds;
+				partialTime += milliseconds;
+				printf("Sort-%f\n", milliseconds);
+
+				cudaEventRecord(start);
+				mySAP( cuObj, SweepDir, MAXN);
+				cudaEventRecord(stop);
+				cudaEventSynchronize(stop);
+				cudaEventElapsedTime(&milliseconds, start, stop);
+				totalTime += milliseconds;
+				partialTime += milliseconds;
+				printf("GSAP-%f\n", milliseconds);
+			}
+		
+			myPrint( fptr, cuObj, cuFileObj, fileObj, MAXN, Boundary, partialTime/1000);
 			myMoveObject( cuObj, MAXN, Boundary, FrameTime);
 		}
 	}
