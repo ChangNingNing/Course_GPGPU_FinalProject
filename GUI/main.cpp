@@ -12,15 +12,16 @@ typedef struct {
 
 Object obj[MAXN];
 FILE *fptr;
-int RadiusN = 6;
-float Radius[] = { 1, 2, 4, 8, 16, 32};
+int RadiusN = 7;
+float Radius[] = { 3, 6, 12, 24, 48, 96, 192};
 float RadiusRGB[][3]={	0.5, 0.0, 0.0,
 						0.0, 0.5, 0.0,
 						0.0, 0.0, 0.5,
 						0.5, 0.5, 0.0,
 						0.5, 0.0, 0.5,
-						0.0, 0.5, 0.5};
-int RadiusMap[33] = {0};
+						0.0, 0.5, 0.5,
+						0.5, 0.5, 0.5};
+int RadiusMap[193] = {0};
 
 int Boundary, N, frameNum;
 
@@ -71,10 +72,12 @@ void Display( void ){
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
+	glEnable(GL_DEPTH_TEST);
 
 	myDrawBoundary();
 	myDrawSimulation();
 
+	glFlush();
 	glutSwapBuffers();
 }
 
@@ -84,7 +87,7 @@ void Idle( void ){
 	fread( obj, sizeof(Object), frameNum, fptr);
 	fread( &frameTime, sizeof(float), 1, fptr);
 
-	printf("%d %f\n", frameNum, frameTime);
+	printf("%d %f\n", frameNum, (float)1 / frameTime);
 	fflush(stdout);
 
 	glutPostRedisplay();
@@ -112,7 +115,7 @@ int main(int argc, char *argv[]){
 
 	// openGL
 	{
-		glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE);
+		glutInitDisplayMode( GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
 
 		glutInitWindowPosition(100, 100);
 		glutInitWindowSize(600, 600);
