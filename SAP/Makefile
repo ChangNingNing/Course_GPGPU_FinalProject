@@ -1,16 +1,10 @@
 INCLUDES=../utils
-CXXFLAGS=-std=c++11 -O2 -arch sm_30 -lineinfo
+CXXFLAGS=-std=c++11 -O2 -arch sm_30
 
 all: main
 
-main: main.o mySAP.o 
-	nvcc $(CXXFLAGS) main.o mySAP.o -o main
-
-main.o: main.cu
-	nvcc $(CXXFLAGS) main.cu -c
-
-mySAP.o: mySAP.cu
-	nvcc $(CXXFLAGS) mySAP.cu -c
+main: main.cu mySAP.cu
+	nvcc $(CXXFLAGS) main.cu mySAP.cu -o main
 
 clean:
 	rm main
