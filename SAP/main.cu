@@ -3,16 +3,31 @@
 #include <stdint.h>
 #include <time.h>
 #include "mySAP.h"
-
+#define TIMER_CREATE(t)                      \
+  cudaEvent_t t##_start, t##_end;            \
+  cudaEventCreate(&t##_start);               \
+  cudaEventCreate(&t##_end);               
+ 
+ 
+#define TIMER_START(t)                          \
+  cudaEventRecord(t##_start);                   \
+  cudaEventSynchronize(t##_start);              \
+ 
+ 
+#define TIMER_END(t)                                          \
+  cudaEventRecord(t##_end);                                   \
+  cudaEventSynchronize(t##_end);                              \
+  cudaEventElapsedTime(&t, t##_start, t##_end);               
+ 
 int main(){
 	// Define
-	static const int MAXN = 1000;
+	static const int MAXN = 100000;
 	static const int Boundary = 1000;
 	static const int RadiusN = 6;
 	static const float Radius[] = { 1, 2, 4, 8, 16, 32};
 	static const float FPS = 50;
 	static const float FrameTime = (float)1 / FPS;
-	static const float SimulationTime = 20;
+	static const float SimulationTime = 1;
 
 	// Allocation
 	static Object obj[MAXN];
@@ -29,7 +44,7 @@ int main(){
 		for (int i=0; i<MAXN; i++){
 			obj[i].r = Radius[rand() % RadiusN];
 			obj[i].pos[0] = (rand() % (int)(Boundary-2*obj[i].r)) + obj[i].r;	// X
-			obj[i].pos[1] = Boundary - obj[i].r - (rand()%(Boundary/10));		// Y
+			obj[i].pos[1] = (rand() % (int)(Boundary-2*obj[i].r)) + obj[i].r;//Boundary - obj[i].r - (rand()%(Boundary/10));		// Y
 			obj[i].pos[2] = (rand() % (int)(Boundary-2*obj[i].r)) + obj[i].r;	// Z
 			obj[i].v[0] = (rand() % (Boundary/5+1)) - Boundary/10;
 			obj[i].v[1] = 0;
@@ -46,42 +61,37 @@ int main(){
 	}
 
 	// Simulation
-	cudaEvent_t start, stop;
-	cudaEventCreate(&start);
-	cudaEventCreate(&stop);
-	float milliseconds = 0;
+	//cudaEvent_t start, stop;
+	//cudaEventCreate(&start);
+	//cudaEventCreate(&stop);
+	float rep;
+	TIMER_CREATE(rep);
 	float totalTime = 0;
 	{
 		while ( (totalTime / 1000) <= SimulationTime ){
 			// SAP
 			float partialTime = 0;
 			{
-				cudaEventRecord(start);
+				TIMER_START(rep);
 				myFindSweepDirection( cuObj, &SweepDir, MAXN); // Find Sweep Dirention
-				cudaEventRecord(stop);
-				cudaEventSynchronize(stop);
-				cudaEventElapsedTime(&milliseconds, start, stop);
-				totalTime += milliseconds;
-				partialTime += milliseconds;
-				printf("FindDir-%f\n", milliseconds);
+				TIMER_END(rep);
+				totalTime += rep;
+				partialTime += rep;
+				printf("FindDir-%f ms\n", rep);
 
-				cudaEventRecord(start);
+				TIMER_START(rep);
 				mySort( cuObj, SweepDir, MAXN); // Sort
-				cudaEventRecord(stop);
-				cudaEventSynchronize(stop);
-				cudaEventElapsedTime(&milliseconds, start, stop);
-				totalTime += milliseconds;
-				partialTime += milliseconds;
-				printf("Sort-%f\n", milliseconds);
+				TIMER_END(rep);
+				totalTime += rep;
+				partialTime += rep;
+				printf("Sort-%f ms\n", rep);
 
-				cudaEventRecord(start);
+				TIMER_START(rep);
 				mySAP( cuObj, SweepDir, MAXN); // SAP
-				cudaEventRecord(stop);
-				cudaEventSynchronize(stop);
-				cudaEventElapsedTime(&milliseconds, start, stop);
-				totalTime += milliseconds;
-				partialTime += milliseconds;
-				printf("GSAP-%f\n", milliseconds);
+				TIMER_END(rep);
+				totalTime += rep;
+				partialTime += rep;
+				printf("GSAP-%f ms\n", rep);
 			}
 		
 			myPrint( fptr, cuObj, cuFileObj, fileObj, MAXN, Boundary, partialTime/1000);
