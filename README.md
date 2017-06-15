@@ -1,4 +1,4 @@
-#Real-time Collision Culling of a Million Spheres on GPU
+# Real-time Collision Culling of a Million Spheres on GPU
 
 ## Verify Correctness
 ![correctness](/figure/correctness.gif)
