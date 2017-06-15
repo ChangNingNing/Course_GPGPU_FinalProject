@@ -1,24 +1,24 @@
 #Real-time Collision Culling of a Million Spheres on GPU
 
 ## Verify Correctness
-figure/correctness.gif
+(/figure/correctness.gif)
 
 ## Real-time Collision Detection of 0.3M Spheres
-https://github.com/ChangNingNing/Course_GPGPU_FinalProject/figure/million.gif
+(/figure/million.gif)
 
 ## Parallel Sweep and Prune
-https://github.com/ChangNingNing/Course_GPGPU_FinalProject/figure/GSAP.jpg
+(/figure/GSAP.jpg)
 
 ## Optimization
 - Workload Balancing
 -------------------
-https://github.com/ChangNingNing/Course_GPGPU_FinalProject/figure/WorkloadBalance.jpg
+(/figure/WorkloadBalance.jpg)
 - Choosing the Sweep Direction
 -------------------
-https://github.com/ChangNingNing/Course_GPGPU_FinalProject/figure/BestDir.jpg
+(/figure/BestDir.jpg)
 - Workspace Subdivision
 -------------------
-https://github.com/ChangNingNing/Course_GPGPU_FinalProject/figure/WorkspaceSub.jpg
+(/figure/WorkspaceSub.jpg)
 
 ## Performance of Sweep and Prune With and Without Optimization
 | Number of spheres | 100K | 0.3M | 1M |
