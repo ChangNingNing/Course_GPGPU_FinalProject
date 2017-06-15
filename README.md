@@ -22,7 +22,7 @@
 
 ## Performance of Sweep and Prune With and Without Optimization
 | Number of spheres | 100K | 0.3M | 1M |
-| ----------------- | ---- | ---- | -- |
+| :----------------- | :----: | :----: | :--: |
 | Without Opt.      | 24ms  | 151ms  | 1530ms| 
 | With Opt          | ?ms  | ?ms  | ?ms| 
 
