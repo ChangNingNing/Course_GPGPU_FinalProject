@@ -13,4 +13,4 @@ mySAP.o: mySAP.cu
 	nvcc $(CXXFLAGS) mySAP.cu -c
 
 clean:
-	rm main
+	rm main *.o
