@@ -22,16 +22,16 @@
 
 int main(){
 	// Define
-	static const int MAXN = 300000;
+	static const int MAXN = 1500000;
 	static const int DrawN = 1000;
 	static const int Boundary = 1000;
 	static const int WSBound = 100000;
 	static int nWS = 1;
 
 	static const int RadiusN = 7;
-	static const int SimulationTime = 10;
+	static const int SimulationTime = 5;
 	static const float Radius[] = { 1.5, 3, 6, 12, 24, 48, 96};
-	static const float Proba[]  = { 700, 900, 950, 990, 998, 1000};
+	static const float Proba[]  = { 6000, 9000, 9500, 9800, 9950, 9999, 10000};
 	static const float FPS = 50;
 	static const float FrameTime = (float)1 / FPS;
 
@@ -51,7 +51,7 @@ int main(){
 	{
 		srand(time(NULL));
 		for (int i=0; i<MAXN; i++){
-			for (int j=0, _p = rand()%1000; j<RadiusN; j++){
+			for (int j=0, _p = rand()%10000; j<RadiusN; j++){
 				if (_p < Proba[j]){
 					obj[i].r = Radius[j];
 					break;
@@ -70,7 +70,7 @@ int main(){
 			obj[i].group = 0;
 		}
 		nWS = CeilDiv(MAXN, WSBound);
-		nWS = nWS > 5? 5: nWS;
+		nWS = nWS > 2? 2: nWS;
 
 		cudaMalloc( &cuObj, sizeof(Object)*MAXN);
 		cudaMemcpy( cuObj, obj, sizeof(Object)*MAXN, cudaMemcpyHostToDevice);
@@ -93,6 +93,7 @@ int main(){
 	int totalTime = 0;
 	{
 		while ( totalTime <= SimulationTime ){
+			printf("\n%d\n", totalTime);
 			totalTime++;
 			// SAP
 			float partialTime = 0;
