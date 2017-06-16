@@ -25,11 +25,11 @@
 ## Experiment Result
 ![performancd](/figure/performance.png)
 
-|Number of spheres| SAP | SAP_WB | SAP_WS |
+|Number of spheres| 100K | 200K | 300K |
 |:---------------:|:---:|:------:|:------:|
-| 100K | 66FPS | 119FPS | 120FPS |
-| 200K | 22FPS | 35FPS | 36FPS |
-| 300K | 11FPS | 16FPS | 18FPS |
+| SAP    | 66 FPS | 22 FPS | 11 FPS |
+| SAP_WB | 119 FPS | 35 FPS | 16 FPS |
+| SAP_WS | 120 FPS | 36 FPS | 18 FPS |
 
 ## Reference
 [Real-time Collision Culling of a Million Bodies on Graphics Processing Units](http://graphics.ewha.ac.kr/gSaP/)
