@@ -4,7 +4,7 @@
 ![correctness](/figure/correctness.gif)
 
 ## Real-time Collision Detection of 0.25M Spheres
-|Without Opt.|With Opt|
+|Without Opt.|With Opt.|
 |:--------:|:------:|
 |![million](/figure/million.gif)|![million](/figure/million-fast.gif)|
 
@@ -25,7 +25,7 @@
 ## Performance of Sweep and Prune With and Without Optimization
 | Number of spheres | 100K | 0.3M | 1M |
 |:-----------------:|:----:|:----:|:--:|
-| Without Opt.      | 24ms  | 151ms  | 1530ms| 
+| Without Opt.      | ?ms  | ?ms  | ?ms| 
 | With Opt          | ?ms  | ?ms  | ?ms| 
 
 ## Reference
