@@ -22,11 +22,8 @@
 -------------------
 ![WorkspaceSub](/figure/WorkspaceSub.JPG)
 
-## Performance of Sweep and Prune With and Without Optimization
-| Number of spheres | 100K | 0.3M | 1M |
-|:-----------------:|:----:|:----:|:--:|
-| Without Opt.      | ?ms  | ?ms  | ?ms| 
-| With Opt          | ?ms  | ?ms  | ?ms| 
+## Experiment Resutl
+![WorkspaceSub](/figure/performancd.PNG)
 
 ## Reference
 [Real-time Collision Culling of a Million Bodies on Graphics Processing Units](http://graphics.ewha.ac.kr/gSaP/)
