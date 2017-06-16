@@ -13,7 +13,7 @@ typedef struct {
 Object obj[MAXN];
 FILE *fptr;
 int RadiusN = 7;
-float Radius[] = { 3, 6, 12, 24, 48, 96, 192};
+float Radius[] = { 1.5, 3, 6, 12, 24, 48, 96};
 float RadiusRGB[][3]={	0.5, 0.0, 0.0,
 						0.0, 0.5, 0.0,
 						0.0, 0.0, 0.5,
@@ -57,7 +57,12 @@ void myDrawSimulation(){
 		glPushMatrix();
 			glColor3f( RadiusRGB[cIndex][0], RadiusRGB[cIndex][1], RadiusRGB[cIndex][2]);
 			glTranslatef( obj[i].pos[0], obj[i].pos[1], obj[i].pos[2]);
-			glutSolidSphere( obj[i].r, 20, 20);
+			if (cIndex < 4)
+				glutSolidSphere( obj[i].r, 5, 5);
+			else if (cIndex < 6)
+				glutSolidSphere( obj[i].r, 10, 10);
+			else
+				glutSolidSphere( obj[i].r, 20, 20);
 		glPopMatrix();
 	}
 }
@@ -91,7 +96,7 @@ void Idle( void ){
 	fflush(stdout);
 
 	glutPostRedisplay();
-	Sleep((unsigned int)frameTime * 1000);
+	Sleep((unsigned int)(frameTime * 1000));
 }
 
 int main(int argc, char *argv[]){
