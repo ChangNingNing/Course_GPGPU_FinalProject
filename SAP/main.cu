@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+#include <assert.h>
 #include "mySAP.h"
 #define TIMER_CREATE(t)                      \
   cudaEvent_t t##_start, t##_end;            \
@@ -18,28 +19,32 @@
   cudaEventRecord(t##_end);                                   \
   cudaEventSynchronize(t##_end);                              \
   cudaEventElapsedTime(&t, t##_start, t##_end);               
- 
+
 int main(){
 	// Define
-	static const int MAXN = 102000;
+	static const int MAXN = 300000;
 	static const int DrawN = 1000;
 	static const int Boundary = 1000;
+	static const int WSBound = 100000;
+	static int nWS = 1;
+
 	static const int RadiusN = 7;
-	static const float Radius[] = { 3, 6, 12, 24, 48, 96, 192};
+	static const int SimulationTime = 10;
+	static const float Radius[] = { 1.5, 3, 6, 12, 24, 48, 96};
 	static const float Proba[]  = { 700, 900, 950, 990, 998, 1000};
 	static const float FPS = 50;
 	static const float FrameTime = (float)1 / FPS;
-	static const float SimulationTime = 60;
 
 	// Allocation
 	static Object obj[MAXN];
 	static Object *cuObj;
 	static FileObject fileObj[MAXN];
 	static FileObject *cuFileObj;
-	static int SweepDir = 0;
+	static int SweepDir[2] = { 0, 2}; // 0 for sweep, and 1 for workspace subdivision.
 
-	static int *cuR, *cuNT;
-
+	static Object **cuWS;
+	static int *cuTmp, *cuTmp2;
+	static int *cuNWObj;
 	FILE *fptr = fopen("log", "wb");
 
 	// Preprocessing
@@ -61,15 +66,22 @@ int main(){
 			obj[i].v[2] = (rand() % (Boundary/5+1)) - Boundary/10;
 			obj[i].isCollision = 0;
 
-			obj[i].isDraw = (rand() % (MAXN / DrawN)==0)? 1: 0;
+			obj[i].isDraw = (rand() % CeilDiv(MAXN, DrawN)==0)? 1: 0;
+			obj[i].group = 0;
 		}
+		nWS = CeilDiv(MAXN, WSBound);
+		nWS = nWS > 5? 5: nWS;
+
 		cudaMalloc( &cuObj, sizeof(Object)*MAXN);
 		cudaMemcpy( cuObj, obj, sizeof(Object)*MAXN, cudaMemcpyHostToDevice);
 
 		cudaMalloc( &cuFileObj, sizeof(FileObject)*MAXN);
 
-		cudaMalloc( &cuR, sizeof(int)*MAXN);
-		cudaMalloc( &cuNT, sizeof(int)*MAXN);
+		cudaMalloc( &cuTmp, sizeof(int)*MAXN);
+		cudaMalloc( &cuTmp2, sizeof(int)*MAXN);
+
+		cudaMalloc( &cuWS, sizeof(Object *)*MAXN*(nWS-1));
+		cudaMalloc( &cuNWObj, sizeof(int)*nWS*4);
 
 		fwrite( &Boundary, sizeof(int), 1, fptr);
 		fwrite( &MAXN, sizeof(int), 1, fptr);
@@ -78,58 +90,85 @@ int main(){
 	// Simulation
 	float rep;
 	TIMER_CREATE(rep);
-	float totalTime = 0;
+	int totalTime = 0;
 	{
-		while ( (totalTime / 1000) <= SimulationTime ){
+		while ( totalTime <= SimulationTime ){
+			totalTime++;
 			// SAP
 			float partialTime = 0;
 			{
 				TIMER_START(rep);
-				myFindSweepDirection( cuObj, &SweepDir, MAXN); // Find Sweep Dirention
+				myFindSweepDirection( cuObj, SweepDir, MAXN); // Find Sweep Dirention
 				TIMER_END(rep);
-				totalTime += rep;
 				partialTime += rep;
 				printf("FindDir-%f ms\n", rep);
 
 				TIMER_START(rep);
 				mySort( cuObj, SweepDir, MAXN); // Sort
 				TIMER_END(rep);
-				totalTime += rep;
 				partialTime += rep;
 				printf("Sort-%f ms\n", rep);
-/*
+
 				TIMER_START(rep);
 				mySAP( cuObj, SweepDir, MAXN); // SAP
 				TIMER_END(rep);
-				totalTime += rep;
 				partialTime += rep;
 				printf("GSAP-%f ms\n", rep);
 
-				// Check SAP
-				cudaMemcpy( obj, cuObj, sizeof(Object)*MAXN, cudaMemcpyDeviceToHost);
-				for (int i=0; i<40; i++) printf("%d ", obj[i].isCollision);
-				puts("");
-				for (int i=MAXN-40; i<MAXN; i++) printf("%d ", obj[i].isCollision);
-				puts("");
-				//
-*/
-				TIMER_START(rep);
-				mySAP2( cuObj, cuR, cuNT, SweepDir, MAXN); // SAP
-				TIMER_END(rep);
-				totalTime += rep;
-				partialTime += rep;
-				printf("GSAP2-%f ms\n", rep);
+					// Check SAP
+					cudaMemcpy( obj, cuObj, sizeof(Object)*MAXN, cudaMemcpyDeviceToHost);
+					int nP_SAP = 0;
+					for (int i=0; i<MAXN; i++) nP_SAP += obj[i].isCollision;
+					//
 
-				// Check SAP2
-				cudaMemcpy( obj, cuObj, sizeof(Object)*MAXN, cudaMemcpyDeviceToHost);
-				for (int i=0; i<40; i++) printf("%d ", obj[i].isCollision);
-				puts("");
-				for (int i=MAXN-40; i<MAXN; i++) printf("%d ", obj[i].isCollision);
-				puts("");
+					// Reset
+					myMoveObject( cuObj, MAXN, Boundary, 0.0f);
+
+				TIMER_START(rep);
+				mySAP_WB( cuObj, cuTmp, cuTmp2, SweepDir, MAXN); // SAP Workload Balance
+				TIMER_END(rep);
+				partialTime += rep;
+				printf("GSAP_WB-%f ms\n", rep);
+
+					// Check SAP_WB
+					cudaMemcpy( obj, cuObj, sizeof(Object)*MAXN, cudaMemcpyDeviceToHost);
+					int nP_SAP_WB = 0;
+					for (int i=0; i<MAXN; i++) nP_SAP_WB += obj[i].isCollision;
+					//
+
+					// Reset
+					myMoveObject( cuObj, MAXN, Boundary, 0.0f);
+
+				TIMER_START(rep);
+				// Split Workspace
+				myWS( cuWS, cuNWObj, nWS, cuObj, cuTmp, SweepDir, MAXN, Boundary);
+				TIMER_END(rep);
+				partialTime += rep;
+				printf("Workspace-%f ms\n", rep);
+
+				TIMER_START(rep);
+				// SAP workspace subdivision
+				mySAP_WS( cuObj, cuWS, cuNWObj, nWS, cuTmp, cuTmp2, SweepDir, MAXN);
+				TIMER_END(rep);
+				partialTime += rep;
+				printf("GSAP_WS-%f ms\n", rep);
+
+					// Check SAP_WS
+					cudaMemcpy( obj, cuObj, sizeof(Object)*MAXN, cudaMemcpyDeviceToHost);
+					int nP_SAP_WS = 0;
+					for (int i=0; i<MAXN; i++) nP_SAP_WS += obj[i].isCollision;
+					//
+
+				// check
+//				printf("--- Check ---\n");
+//				printf("SAP    : %d\n", nP_SAP);
+//				printf("SAP_WB : %d\n", nP_SAP_WB);
+//				printf("SAP_WS : %d\n", nP_SAP_WS);
+				assert(nP_SAP == nP_SAP_WB);
+				assert(nP_SAP_WS >= nP_SAP);
 				//
 			}
-		
-			myPrint( cuObj, cuFileObj, fileObj, cuR, MAXN, partialTime/1000, fptr);
+			myPrint( cuObj, cuFileObj, fileObj, cuTmp, MAXN, partialTime/1000, fptr);
 			myMoveObject( cuObj, MAXN, Boundary, FrameTime);
 		}
 	}
@@ -138,8 +177,10 @@ int main(){
 	{
 		cudaFree( cuObj);
 		cudaFree( cuFileObj);
-		cudaFree( cuR);
-		cudaFree( cuNT);
+		cudaFree( cuTmp);
+		cudaFree( cuTmp2);
+		cudaFree( cuWS);
+		cudaFree( cuNWObj);
 		fclose(fptr);
 	}
 	return 0;
