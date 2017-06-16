@@ -3,8 +3,10 @@
 ## Verify Correctness
 ![correctness](/figure/correctness.gif)
 
-## Real-time Collision Detection of 0.3M Spheres
-![million](/figure/million.gif)
+## Real-time Collision Detection of 0.25M Spheres
+|Without Opt.|With Opt|
+|:--------:|:------:|
+|![million](/figure/million.gif)|![million](/figure/million-fast.gif)|
 
 ## Parallel Sweep and Prune
 ![GSaP](/figure/GSAP.JPG)
