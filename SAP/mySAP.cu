@@ -97,55 +97,117 @@ struct myCompareByGroup{
 	}
 };
 
-__global__ void CudaGroup(	Object *cuObj, int *cuNWObj, int nWS,
-							int *cuBound, int axis, int N, int Boundary){
+__device__ void CudaGroup_add1(int group, int id, int *cuNWObj, Object *cuObj){
+	atomicAdd( &(cuNWObj[group]), 1);
+	cuObj[id].group = group;
+}
+
+__device__ void CudaGroup_add2(	int group, int id, int *cuNWObj, Object *cuObj,
+								int nWS, int *cuBound, float *r, float *l){
+	atomicAdd( &(cuNWObj[group]), 1);
+	cuObj[id].group = group;
+
+	int offset = (group - nWS*nWS)*2;
+	atomicMax( &(cuBound[offset+0]), (int)(r[0]-0.001+1));
+	atomicMax( &(cuBound[offset+1]), (int)(r[1]-0.001+1));
+	offset += ((nWS+1)*(nWS+1)-nWS*nWS)*2;
+	atomicMin( &(cuBound[offset+0]), (int)l[0]);
+	atomicMin( &(cuBound[offset+1]), (int)l[1]);
+}
+
+__global__ void CudaGroup(	Object *cuObj, int *cuBound, int *cuNWObj, int nWS,
+							int axis1, int axis2, int N, int Boundary){
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 	if (id >= N) return;
 
-	float l, r;
-	l = cuObj[id].pos[axis] - cuObj[id].r;
-	r = cuObj[id].pos[axis] + cuObj[id].r;
+	float l[2], r[2];
+	l[0] = cuObj[id].pos[axis1] - cuObj[id].r;
+	r[0] = cuObj[id].pos[axis1] + cuObj[id].r;
+	l[1] = cuObj[id].pos[axis2] - cuObj[id].r;
+	r[1] = cuObj[id].pos[axis2] + cuObj[id].r;
 
-	float chunk = (float)Boundary / nWS;
-	float _r;
-	for (int i=0; i<nWS; i++){
-		_r = (i + 1)*chunk + 0.001;
-		if (_r >= r){
-			atomicAdd( &(cuNWObj[i]), 1);
-			cuObj[id].group = i;
+	float _r = (float)Boundary / nWS;
+	if (r[0] <= _r){ // 0, 1, 6
+		if (r[1] <= _r){ // 0
+			CudaGroup_add1(0, id, cuNWObj, cuObj);
 			return;
 		}
-		else if (_r > l){
-			atomicAdd( &(cuNWObj[nWS + i]), 1);
-			cuObj[id].group = nWS + i;
-			// offset 0 is Max bound, and nWS is Min bound.
-			atomicMax( &(cuBound[i]), (int)(r-0.001+1));
-			atomicMin( &(cuBound[i+nWS]), (int)l);
+		else if (l[1] >= _r){ // 1
+			CudaGroup_add1(1, id, cuNWObj, cuObj);
+			return;
+		}
+		else { // 6
+			CudaGroup_add2(	6, id, cuNWObj, cuObj,
+							nWS, cuBound, r, l);
+			return;
+		}
+	}
+	else if (l[0] >= _r){ // 2, 3, 7
+		if (r[1] <= _r){ // 2
+			CudaGroup_add1(2, id, cuNWObj, cuObj);
+			return;
+		}
+		else if (l[1] >= _r){ // 3
+			CudaGroup_add1(3, id, cuNWObj, cuObj);
+			return;
+		}
+		else { // 7
+			CudaGroup_add2(	7, id, cuNWObj, cuObj,
+							nWS, cuBound, r, l);
+			return;
+		}
+	}
+	else { // 4, 5, 8
+		if (r[1] <= _r){ // 4
+			CudaGroup_add2(	4, id, cuNWObj, cuObj,
+							nWS, cuBound, r, l);
+			return;
+		}
+		else if (l[1] >= _r){ // 5
+			CudaGroup_add2(	5, id, cuNWObj, cuObj,
+							nWS, cuBound, r, l);
+			return;
+		}
+		else { // 8
+			CudaGroup_add2(	8, id, cuNWObj, cuObj,
+							nWS, cuBound, r, l);
 			return;
 		}
 	}
 }
 
 __global__ void CudaSplit(	int *cuTmp, int *cuBound, int *cuNWObj, Object *cuObj,
-							int axis, int group, int nWS, int N){
+							int axis1, int axis2, int group, int nWS, int N){
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 	if (id >= N) return;
 
-	if (cuObj[id].group == group) cuTmp[id] = 1;
-	else {
-		float r = cuObj[id].pos[axis] + cuObj[id].r;
-		float l = cuObj[id].pos[axis] - cuObj[id].r;
-		float _r = cuBound[group - nWS];
-		float _l = cuBound[group];
+	if (cuObj[id].group == group){
+		cuTmp[id] = 1;
+		return;
+	}
 
-		if ( (r > _l && r < _r) || (l < _r && l > _l)){
+	float r[2], l[2];
+	r[0] = cuObj[id].pos[axis1] + cuObj[id].r;
+	l[0] = cuObj[id].pos[axis1] - cuObj[id].r;
+	r[1] = cuObj[id].pos[axis2] + cuObj[id].r;
+	l[1] = cuObj[id].pos[axis2] - cuObj[id].r;
+
+	float _r[2], _l[2];
+	int offset = (group - nWS*nWS)*2;
+	_r[0] = cuBound[offset + 0];
+	_r[1] = cuBound[offset + 1];
+	offset += ((nWS+1)*(nWS+1)-nWS*nWS)*2;
+	_l[0] = cuBound[offset + 0];
+	_l[1] = cuBound[offset + 1];
+
+	if ( (r[0] > _l[0] && r[0] < _r[0]) || (l[0] < _r[0] && l[0] > _l[0])){
+		if ( (r[1] > _l[1] && r[1] < _r[1]) || (l[1] < _r[1] && l[1] > _l[1])){
 			atomicAdd( &(cuNWObj[group]), 1);
 			cuTmp[id] = 1;
-		}
-		else{
-			cuTmp[id] = 0;
+			return;
 		}
 	}
+	cuTmp[id] = 0;
 }
 
 __global__ void CudaWorkspace( Object **cuWS, int *cuTmp, Object *cuObj, int offset, int N){
@@ -242,7 +304,10 @@ __global__ void CudaSAP_Workload( Object *cuWS, int *cuR, int *cuNT, int axis, i
         _r = cuWS[i].r;
         dist = sqr(_pos[0]-pos[0])+sqr(_pos[1]-pos[1])+sqr(_pos[2]-pos[2]);
         if(dist < (sqr(r + _r)))
+		{
+//			cuWS[i].isCollision = 1;
 			num++;
+		}
     }
 	atomicAdd( &(cuWS[index].isCollision), num);
 }
@@ -305,7 +370,10 @@ __global__ void CudaSAP_Workload_WS( Object **cuWS, int *cuR, int *cuNT, int axi
         _r = cuWS[i]->r;
         dist = sqr(_pos[0]-pos[0])+sqr(_pos[1]-pos[1])+sqr(_pos[2]-pos[2]);
         if(dist < (sqr(r + _r)))
+		{
+//			cuWS[i]->isCollision = 1;
 			num++;
+		}
     }
 	atomicAdd( &(cuWS[index]->isCollision), num);
 }
@@ -339,52 +407,46 @@ __global__ void CudaPrintObject(FileObject *cuFileObj, Object *cuObj, int *cuTmp
 #define BlockSize 256
 
 void myFindSweepDirection( Object *cuObj, int *SweepDir, int N){
-	float mean, var, maxVar = -1, secVar = -1;
-	int coor, coor2;
+	float mean, var[3];
 	for (int i=0; i<3; i++){
 		mean = thrust::transform_reduce(thrust::device, cuObj, cuObj+N,
 											Obj2Float(i, N), 0.0f, myFloatAdd());
-		var = thrust::transform_reduce(thrust::device, cuObj, cuObj+N,
+		var[i] = thrust::transform_reduce(thrust::device, cuObj, cuObj+N,
 											Obj2Diff(i, N, mean), 0.0f, myFloatAdd());
-		if (var > maxVar){
-			secVar = maxVar;
-			coor2 = coor;
-
-			maxVar = var;
-			coor = i;
-		}
-		else if (var > secVar){
-			secVar = var;
-			coor2 = i;
-		}
 	}
-	SweepDir[0] = coor;
-	SweepDir[1] = coor2;
+	for (int i=0; i<3; i++){
+		int max = -1, coor;
+		for (int j=0; j<3; j++)
+			if (var[j] > max) max = var[j], coor = j;
+		var[coor] = -1;
+		SweepDir[i] = coor;
+	}
 }
 
 void mySort( Object *cuObj, int *SweepDir, int N){
 	thrust::sort(thrust::device, cuObj, cuObj+N, myCompare(SweepDir[0]));
 }
 
-void myWS(	Object **cuWS, int *cuNWObj, int nWS, Object *cuObj,
-			int *cuTmp, int *SweepDir, int N, int Boundary)
+void myWS(	Object **cuWS, int *cuWSBound, int *cuNWObj, int nWS,
+			Object *cuObj, int *cuTmp, int *SweepDir, int N, int Boundary)
 {
 	if (nWS <= 1) return;
 
-	cudaMemset( cuNWObj, 0, sizeof(int)*nWS*2);
-	// Hide the O_bd boundary info. at cuNWObj tail.
-	int *cuBound = cuNWObj + nWS*2;
-	cudaMemset( cuBound, 0, sizeof(int)*nWS);
-	cudaMemset( cuBound+nWS, 1, sizeof(int)*nWS);
+	int nGroup = (nWS+1)*(nWS+1);
+	int nWSGroup = nGroup - nWS*nWS;
+
+	cudaMemset( cuNWObj, 0, sizeof(int)*nGroup);
+
+	cudaMemset( cuWSBound, 0, sizeof(int)*nWSGroup*2);
+	cudaMemset( cuWSBound+nWSGroup*2, 1, sizeof(int)*nWSGroup*2);
 
 	dim3 grid(CeilDiv(N, BlockSize)), block(BlockSize);
-	CudaGroup<<< grid, block >>>(	cuObj, cuNWObj, nWS, cuBound,
-									SweepDir[1], N, Boundary);
+	CudaGroup<<< grid, block >>>(	cuObj, cuWSBound, cuNWObj, nWS,
+									SweepDir[1], SweepDir[2], N, Boundary);
 
-	for (int i=0; i<nWS-1; i++){
-		int group = i + nWS;
-		CudaSplit<<< grid, block >>>( cuTmp, cuBound, cuNWObj, cuObj,
-										SweepDir[1], group, nWS, N);
+	for (int i=0, group=i+nWS*nWS; i<nWSGroup; i++, group++){
+		CudaSplit<<< grid, block >>>(	cuTmp, cuWSBound, cuNWObj, cuObj,
+										SweepDir[1], SweepDir[2], group, nWS, N);
 		thrust::inclusive_scan(thrust::device, cuTmp, cuTmp+N, cuTmp);
 		CudaWorkspace<<< grid, block >>>( cuWS, cuTmp, cuObj, i*N, N);
 	}
@@ -414,32 +476,33 @@ void mySAP_WS(Object *cuObj, Object **cuWS, int *cuNWObj, int nWS, int *cuR, int
 		return;
 	}
 
-	int nWObj[nWS*2];
-	cudaMemcpy( nWObj, cuNWObj, sizeof(int)*nWS*2, cudaMemcpyDeviceToHost);
+	int nGroup = (nWS+1)*(nWS+1);
+	int nWSGroup = nGroup - nWS*nWS;
+	int nWObj[nGroup];
+	cudaMemcpy( nWObj, cuNWObj, sizeof(int)*nGroup, cudaMemcpyDeviceToHost);
 
-	for (int i=0; i<nWS-1; i++){
-		int group = i + nWS;
+	for (int i=0, g=i+nWS*nWS; i<nWSGroup; i++, g++){
 		Object **_cuWS = cuWS + N*i;
-		dim3 grid(CeilDiv(nWObj[group], BlockSize)), block(BlockSize);
-		CudaWorkload_WS<<< grid, block >>>( _cuWS, cuR, cuNT, SweepDir[0], nWObj[group]);
+		dim3 grid(CeilDiv(nWObj[g], BlockSize)), block(BlockSize);
+		CudaWorkload_WS<<< grid, block >>>( _cuWS, cuR, cuNT, SweepDir[0], nWObj[g]);
 
-		thrust::inclusive_scan(thrust::device, cuNT, cuNT+nWObj[group], cuNT);
+		thrust::inclusive_scan(thrust::device, cuNT, cuNT+nWObj[g], cuNT);
 
 		int nThreads;
-		cudaMemcpy( &nThreads, cuNT+nWObj[group]-1, sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy( &nThreads, cuNT+nWObj[g]-1, sizeof(int), cudaMemcpyDeviceToHost);
 
 		dim3 grid2(CeilDiv(nThreads, 1024)), block2(1024);
-		CudaSAP_Workload_WS<<< grid2, block2 >>>( _cuWS, cuR, cuNT, SweepDir[0], nWObj[group]);
+		CudaSAP_Workload_WS<<< grid2, block2 >>>( _cuWS, cuR, cuNT, SweepDir[0], nWObj[g]);
 	}
 
 	thrust::stable_sort(thrust::device, cuObj, cuObj+N, myCompareByGroup());
 
 	int offset[nWS];
 	offset[0] = 0;
-	for (int i=1; i<nWS; i++)
+	for (int i=1; i<nWS*nWS; i++)
 		offset[i] = offset[i-1] + nWObj[i-1];
 
-	for (int i=0; i<nWS; i++){
+	for (int i=0; i<nWS*nWS; i++){
 		Object *_cuObj = cuObj + offset[i];
 		dim3 grid(CeilDiv(nWObj[i], BlockSize)), block(BlockSize);
 		CudaWorkload<<< grid, block >>>( _cuObj, cuR, cuNT, SweepDir[0], nWObj[i]);

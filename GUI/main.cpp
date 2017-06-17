@@ -20,7 +20,7 @@ float RadiusRGB[][3]={	0.5, 0.0, 0.0,
 						0.5, 0.5, 0.0,
 						0.5, 0.0, 0.5,
 						0.0, 0.5, 0.5,
-						0.5, 0.5, 0.5};
+						0.7, 0.0, 0.0};
 int RadiusMap[193] = {0};
 
 int Boundary, N, frameNum;
@@ -55,8 +55,18 @@ void myDrawSimulation(){
 	for (int i=0; i<frameNum; i++){
 		int cIndex = RadiusMap[(int)obj[i].r];
 		glPushMatrix();
+			/* For correctness
+			if (obj[i].isCollision)
+				glColor3f( 1, 0, 0);
+			else
+				glColor3f( 0, 1, 0);
+			*/
 			glColor3f( RadiusRGB[cIndex][0], RadiusRGB[cIndex][1], RadiusRGB[cIndex][2]);
 			glTranslatef( obj[i].pos[0], obj[i].pos[1], obj[i].pos[2]);
+			
+			/* For correctness
+			glutSolidSphere( obj[i].r, 30, 30);
+			*/
 			if (cIndex < 4)
 				glutSolidSphere( obj[i].r, 5, 5);
 			else if (cIndex < 6)
@@ -102,9 +112,14 @@ void Idle( void ){
 int main(int argc, char *argv[]){
 	// Initial
 	{
+		if (argc < 2){
+			puts("usage: ./main.exe [log file]");
+			return 0;
+		}
+
 		for (int i=0; i<RadiusN; i++)
 			RadiusMap[(int)Radius[i]] = i;
-		fptr = fopen("log", "rb");
+		fptr = fopen(argv[1], "rb");
 		if (!fptr){
 			printf("open log file error.\n");
 			exit(1);

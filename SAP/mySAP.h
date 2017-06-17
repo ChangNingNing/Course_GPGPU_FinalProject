@@ -16,8 +16,8 @@ void myFindSweepDirection( Object *cuObj, int *SweepDir, int N);
 
 void mySort( Object *cuObj, int *SweepDir, int N);
 
-void myWS(	Object **cuWS, int *cuNWObj, int nWS, Object *cuObj,
-			int *cuTmp, int *SweepDir, int N, int Boundary);
+void myWS(	Object **cuWS, int *cuWSBound, int *cuNWObj, int nWS,
+			Object *cuObj, int *cuTmp, int *SweepDir, int N, int Boundary);
 
 void mySAP( Object *cuObj, int *SweepDir, int N);
 void mySAP_WB( Object *cuObj, int *cuR, int *cuNT, int *SweepDir, int N);
