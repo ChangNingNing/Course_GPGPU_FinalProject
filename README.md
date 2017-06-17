@@ -27,9 +27,9 @@
 
 |Number of spheres| 100K | 200K | 300K |
 |:---------------:|:---:|:------:|:------:|
-| SAP    | 66 FPS | 22 FPS | 11 FPS |
-| SAP_WB | 119 FPS | 35 FPS | 16 FPS |
-| SAP_WS | 120 FPS | 36 FPS | 18 FPS |
+| SAP    | 63 FPS | 22 FPS | 11 FPS |
+| SAP_WB | 113 FPS | 35 FPS | 16 FPS |
+| SAP_WS | 113 FPS | 48 FPS | 18 FPS |
 
 ## Reference
 [Real-time Collision Culling of a Million Bodies on Graphics Processing Units](http://graphics.ewha.ac.kr/gSaP/)
