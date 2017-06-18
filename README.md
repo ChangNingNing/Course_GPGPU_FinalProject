@@ -1,7 +1,7 @@
 # Real-time Collision Culling of a Million Spheres on GPU
 
 ## Verify Correctness
-![correctness](/figure/correctness.gif)
+![correctness](/figure/correct.gif)
 
 ## Real-time Collision Detection of 0.25M Spheres
 |Without Opt.|With Opt.|
