@@ -86,7 +86,7 @@ __global__ void CudaMoveObject( Object *cuObj, int N, int Boundary, float FT){
 		cuObj[id].v[1] += g*FT;
 	}
 	// Set FT = 0 to use this function as reset function.
-	cuObj[id].isCollision = 0;
+	cuObj[id].nCollision = 0;
 }
 
 // mySplitWorkspace's kernel
@@ -210,12 +210,16 @@ __global__ void CudaSplit(	int *cuTmp, int *cuBound, int *cuNWObj, Object *cuObj
 	cuTmp[id] = 0;
 }
 
-__global__ void CudaWorkspace( Object **cuWS, int *cuTmp, Object *cuObj, int offset, int N){
+__global__ void CudaWorkspace( ObjectPtr *cuWS, int *cuTmp, Object *cuObj, int offset, int N){
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 	if (id >= N || cuTmp[id]==0) return;
 	if (id != 0 && cuTmp[id] == cuTmp[id-1]) return;
 
-	cuWS[offset + cuTmp[id]-1] = &(cuObj[id]);
+	cuWS[offset + cuTmp[id]-1].pos[0] = cuObj[id].pos[0];
+	cuWS[offset + cuTmp[id]-1].pos[1] = cuObj[id].pos[1];
+	cuWS[offset + cuTmp[id]-1].pos[2] = cuObj[id].pos[2];
+	cuWS[offset + cuTmp[id]-1].r = cuObj[id].r;
+	cuWS[offset + cuTmp[id]-1].nC_ptr = &(cuObj[id].nCollision);
 }
 
 // mySAP's kernel
@@ -240,10 +244,12 @@ __global__ void CudaSAP( Object *cuObj, int axis, int N){
         _pos[2] = cuObj[i].pos[2];
         _r = cuObj[i].r;
         float dist = sqr(_pos[0]-pos[0])+sqr(_pos[1]-pos[1])+sqr(_pos[2]-pos[2]);
-        if(dist < (sqr(r + _r)))
+        if(dist < (sqr(r + _r))){
 			num++;
+			atomicAdd( &(cuObj[i].nCollision), 1);
+		}
     }
-	cuObj[id].isCollision = num;
+	atomicAdd( &(cuObj[id].nCollision), num);
 }
 
 // mySAP_WB's kernel
@@ -305,16 +311,16 @@ __global__ void CudaSAP_Workload( Object *cuWS, int *cuR, int *cuNT, int axis, i
         dist = sqr(_pos[0]-pos[0])+sqr(_pos[1]-pos[1])+sqr(_pos[2]-pos[2]);
         if(dist < (sqr(r + _r)))
 		{
-//			cuWS[i].isCollision = 1;
 			num++;
+			atomicAdd( &(cuWS[i].nCollision), 1);
 		}
     }
-	atomicAdd( &(cuWS[index].isCollision), num);
+	atomicAdd( &(cuWS[index].nCollision), num);
 }
 
 // mySAP_WS's kernel
 #define nWorkWS 65536
-__global__ void CudaWorkload_WS( Object **cuWS, int *cuR, int *cuNT, int axis, int N){
+__global__ void CudaWorkload_WS( ObjectPtr *cuWS, int *cuR, int *cuNT, int axis, int N){
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (id >= N) return;
@@ -322,10 +328,10 @@ __global__ void CudaWorkload_WS( Object **cuWS, int *cuR, int *cuNT, int axis, i
 	// Binary Search for Right (inclusive)
 	{
 		int l = id+1, r = N-1, mid;
-		float value = cuWS[id]->pos[axis] + cuWS[id]->r, _v;
+		float value = cuWS[id].pos[axis] + cuWS[id].r, _v;
 		while (l <= r){
 			mid = (l + r) / 2;
-			_v = cuWS[mid]->pos[axis] - cuWS[mid]->r;
+			_v = cuWS[mid].pos[axis] - cuWS[mid].r;
 			if (value > _v) l = mid + 1;
 			else r = mid - 1;
 		}
@@ -335,7 +341,7 @@ __global__ void CudaWorkload_WS( Object **cuWS, int *cuR, int *cuNT, int axis, i
 	cuNT[id] = CeilDiv(right - id, nWorkWS);
 }
 
-__global__ void CudaSAP_Workload_WS( Object **cuWS, int *cuR, int *cuNT, int axis, int N){
+__global__ void CudaSAP_Workload_WS( ObjectPtr *cuWS, int *cuR, int *cuNT, int axis, int N){
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int index;
@@ -357,25 +363,25 @@ __global__ void CudaSAP_Workload_WS( Object **cuWS, int *cuR, int *cuNT, int axi
 	right = left + nWorkWS > cuR[index]? cuR[index]+1: left+nWorkWS;
 
     float pos[3], _pos[3], r, _r, dist;
-    pos[0] = cuWS[index]->pos[0];
-    pos[1] = cuWS[index]->pos[1];
-    pos[2] = cuWS[index]->pos[2];
-    r = cuWS[index]->r;
+    pos[0] = cuWS[index].pos[0];
+    pos[1] = cuWS[index].pos[1];
+    pos[2] = cuWS[index].pos[2];
+    r = cuWS[index].r;
 
 	int num = 0;
 	for (int i=left; i<right; i++){
-        _pos[0] = cuWS[i]->pos[0];
-        _pos[1] = cuWS[i]->pos[1];
-        _pos[2] = cuWS[i]->pos[2];
-        _r = cuWS[i]->r;
+        _pos[0] = cuWS[i].pos[0];
+        _pos[1] = cuWS[i].pos[1];
+        _pos[2] = cuWS[i].pos[2];
+        _r = cuWS[i].r;
         dist = sqr(_pos[0]-pos[0])+sqr(_pos[1]-pos[1])+sqr(_pos[2]-pos[2]);
         if(dist < (sqr(r + _r)))
 		{
-//			cuWS[i]->isCollision = 1;
+			atomicAdd( cuWS[i].nC_ptr, 1);
 			num++;
 		}
     }
-	atomicAdd( &(cuWS[index]->isCollision), num);
+	atomicAdd( cuWS[index].nC_ptr, num);
 }
 
 // myPrint's kernel
@@ -398,7 +404,7 @@ __global__ void CudaPrintObject(FileObject *cuFileObj, Object *cuObj, int *cuTmp
 		cuFileObj[_id].pos[1] = cuObj[id].pos[1];
 		cuFileObj[_id].pos[2] = cuObj[id].pos[2];
 		cuFileObj[_id].r = cuObj[id].r;
-		cuFileObj[_id].isCollision = cuObj[id].isCollision;
+		cuFileObj[_id].nCollision = cuObj[id].nCollision;
 	}
 }
 
@@ -427,7 +433,7 @@ void mySort( Object *cuObj, int *SweepDir, int N){
 	thrust::sort(thrust::device, cuObj, cuObj+N, myCompare(SweepDir[0]));
 }
 
-void myWS(	Object **cuWS, int *cuWSBound, int *cuNWObj, int nWS,
+void myWS(	ObjectPtr *cuWS, int *cuWSBound, int *cuNWObj, int nWS,
 			Object *cuObj, int *cuTmp, int *SweepDir, int N, int Boundary)
 {
 	if (nWS <= 1) return;
@@ -470,7 +476,9 @@ void mySAP_WB( Object *cuObj, int *cuR, int *cuNT, int *SweepDir, int N){
 	CudaSAP_Workload<<< grid2, block2 >>>( cuObj, cuR, cuNT, SweepDir[0], N);
 }
 
-void mySAP_WS(Object *cuObj, Object **cuWS, int *cuNWObj, int nWS, int *cuR, int *cuNT, int *SweepDir, int N){
+void mySAP_WS(	Object *cuObj, ObjectPtr *cuWS, int *cuNWObj, int nWS,
+				int *cuR, int *cuNT, int *SweepDir, int N
+){
 	if (nWS <= 1){
 		mySAP_WB( cuObj, cuR, cuNT, SweepDir, N);
 		return;
@@ -482,7 +490,7 @@ void mySAP_WS(Object *cuObj, Object **cuWS, int *cuNWObj, int nWS, int *cuR, int
 	cudaMemcpy( nWObj, cuNWObj, sizeof(int)*nGroup, cudaMemcpyDeviceToHost);
 
 	for (int i=0, g=i+nWS*nWS; i<nWSGroup; i++, g++){
-		Object **_cuWS = cuWS + N*i;
+		ObjectPtr *_cuWS = cuWS + N*i;
 		dim3 grid(CeilDiv(nWObj[g], BlockSize)), block(BlockSize);
 		CudaWorkload_WS<<< grid, block >>>( _cuWS, cuR, cuNT, SweepDir[0], nWObj[g]);
 

@@ -67,12 +67,14 @@ void myDrawSimulation(){
 			/* For correctness
 			glutSolidSphere( obj[i].r, 30, 30);
 			*/
+			/**/
 			if (cIndex < 4)
 				glutSolidSphere( obj[i].r, 5, 5);
 			else if (cIndex < 6)
 				glutSolidSphere( obj[i].r, 10, 10);
 			else
 				glutSolidSphere( obj[i].r, 20, 20);
+			/**/
 		glPopMatrix();
 	}
 }

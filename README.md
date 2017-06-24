@@ -1,7 +1,7 @@
 # Real-time Collision Culling of a Million Spheres on GPU
 
 ## Verify Correctness
-![correctness](/figure/correct.gif)
+![correctness](/figure/correctness.gif)
 
 ## Real-time Collision Detection of 0.25M Spheres
 |Without Opt.|With Opt.|
@@ -27,9 +27,9 @@
 
 |Number of spheres| 100K | 200K | 300K |
 |:---------------:|:---:|:------:|:------:|
-| SAP    | 63 FPS | 22 FPS | 11 FPS |
-| SAP_WB | 113 FPS | 35 FPS | 16 FPS |
-| SAP_WS | 113 FPS | 48 FPS | 18 FPS |
+| SAP    | 64 FPS | 20 FPS | 10 FPS |
+| SAP_WB | 103 FPS | 29 FPS | 13 FPS |
+| SAP_WS | 117 FPS | 48 FPS | 23 FPS |
 
 ## Reference
 [Real-time Collision Culling of a Million Bodies on Graphics Processing Units](http://graphics.ewha.ac.kr/gSaP/)
