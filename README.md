@@ -9,14 +9,14 @@
 	- Sorting
 	- Sweep window
 	- Collision detection
-- Worst case: O(n^{2})
+- Worst case: O(n<sub>2</sub>)
 
 ### Parallel Sweep and Prune
 -------------------
 ![GSaP](/figure/GSAP.JPG)
 - GPU version
 	- Sorting
-	- *Sweep an object per thread*
+	- <strong>Sweep an object per thread</strong>
 	- Collision detection
 - Worse case: O(n<sup>2</sup>/p)
 - Problem
@@ -71,21 +71,40 @@
 	- Extension mark
 	- Then same as group C<sub>i</sub>
 - Problem
-	- Twice *global memory access*
+	- Twice <strong>global memory access</strong>
 
 ## Optimation 2 - by Us
 
 - Less Workspace Duplication
 -------------------
+- Choose group per object
+- For group C<sub>ri</sub>
+	- Extension mark
+	- thrust library: inclusive scan (prefix sum)
+	- Put into workspace
+	- Workload balance and Parallel SaP
+- For group C<sub>i</sub>
+	- thrust library: stable sort by group index
+	- Workload balance and Parallel SaP
+- Solved problem
+	- <strong>25% less global memory access</strong>
 
 - Less Global Memory Access
 -------------------
+- For group C<sub>ri</sub>
+	- Duplicate information to workspace pointer.
+	- Write bake to the object if collision occur.
+- Solved problem
+	- <strong>Reduce global memory access</strong>
 
 ## Expetiment Result
 
 - Verify Correctness
 -------------------
 ![correctness](/figure/correctness.gif)
+	- All have the same z position
+	- Green means no collision.
+	- Red means collision occuring.
 
 - Real-time Collision Detection of 0.25M Spheres
 -------------------
