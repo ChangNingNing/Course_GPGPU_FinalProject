@@ -4,7 +4,7 @@
 
 ### Sweep and Prune
 -------------------
-![SaP](/figure/SaP.JPG)
+![SaP](/figure/SaP.jpg)
 - CPU version
 	- Sorting
 	- Sweep window
