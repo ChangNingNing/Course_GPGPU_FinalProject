@@ -9,24 +9,71 @@
 	- Sorting
 	- Sweep window
 	- Collision detection
+- Worst case: O(n^{2})
 
-- Parallel Sweep and Prune
+### Parallel Sweep and Prune
 -------------------
 ![GSaP](/figure/GSAP.JPG)
+- GPU version
+	- Sorting
+	- *Sweep an object per thread*
+	- Collision detection
+- Worse case: O(n<sup>2</sup>/p)
+- Problem
+	- Many false positive collided pair
+	- Workload imbalance
 
-## Optimization 1 - Paper
+## Optimization 1 - by Paper
 
-- Choosing the Sweep Direction
+### Choosing the Sweep Direction
 -------------------
 ![BestDir](/figure/BestDir.JPG)
-- Workload Balancing
+- Variance for x, y, z axis
+	- thrust library: transform reduction
+- Max variance axis
+	- Sweep
+- Other axis
+	- Prune
+- Complexity: O(n)
+- Solved problem
+	- Reduce false positive collided pair
+
+### Workload Balancing
 -------------------
 ![WorkloadBalance](/figure/WorkloadBalance.JPG)
-- Workspace Subdivision
+- Workload estimation
+	- Binary search for M<sub>i</sub>
+- Workload balance
+	- Get required # of threads per object
+	- thrust library: inclusive scan (prefix sum)
+- Parallel SaP
+	- Binary search for object index
+	- SaP
+- Solved problem
+	- Make workload balance
+
+### Workspace Subdivision
 -------------------
 ![WorkspaceSub](/figure/WorkspaceSub.JPG)
+- Use prined axis
+- Divide to groups
+	- Groups for not crossing the line, C<sub>i</sub>
+	- Groups for crossing the line, C<sub>ri</sub>
+- Duplicate the objects which touch the C<sub>ri</sub>
 
-## Optimation 2 - Our
+-------------------
+- Choose group per object
+- For group C<sub>i</sub>
+	- Mark
+	- thrust library: inclusive scan (prefix sum)
+	- Put into workspace
+- For group C<sub>ri</sub>
+	- Extension mark
+	- Then same as group C<sub>i</sub>
+- Problem
+	- Twice *global memory access*
+
+## Optimation 2 - by Us
 
 - Less Workspace Duplication
 -------------------
