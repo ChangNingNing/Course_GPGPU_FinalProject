@@ -1,4 +1,7 @@
 # Real-time Collision Culling of a Million Spheres on GPU
+## Introduction
+-------------------
+This is a final project from a course, GPGPU.  We implement a paper of collision detection based on GPU device.  You can see the original website of the paper at Reference.
 
 ## Algotithm
 
@@ -119,18 +122,20 @@
 
 ### Real-time Collision Detection of 0.25M Spheres
 -------------------
-<img src="figure/environment.png" width="500"/>
+<img src="figure/environment.png" width="800"/>
 
 - Useless comparation because of hardward improvement.
+
+-------------------
+- Comparation between our optimazations.
 
 |Without Opt.|With Opt.|
 |:--------:|:------:|
 |![million](/figure/million.gif)|![million](/figure/million-fast.gif)|
-- Comparation between our optimazations.
 
 ### Performance of detection lantency
 -------------------
-<img src="figure/performance.png" width="500"/>
+<img src="figure/performance.png" width="1000"/>
 
 
 ### Performance of realtime FPS
