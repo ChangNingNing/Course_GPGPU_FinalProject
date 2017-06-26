@@ -75,7 +75,7 @@
 
 ## Optimation 2 - by Us
 
-- Less Workspace Duplication
+### Less Workspace Duplication
 -------------------
 - Choose group per object
 - For group C<sub>ri</sub>
@@ -89,7 +89,7 @@
 - Solved problem
 	- <strong>25% less global memory access</strong>
 
-- Less Global Memory Access
+### Less Global Memory Access
 -------------------
 - For group C<sub>ri</sub>
 	- Duplicate information to workspace pointer.
@@ -99,25 +99,25 @@
 
 ## Expetiment Result
 
-- Verify Correctness
+### Verify Correctness
 -------------------
 ![correctness](/figure/correctness.gif)
-	- All have the same z position
-	- Green means no collision.
-	- Red means collision occuring.
+- All have the same z position
+- Green means no collision.
+- Red means collision occuring.
 
-- Real-time Collision Detection of 0.25M Spheres
+### Real-time Collision Detection of 0.25M Spheres
 -------------------
 |Without Opt.|With Opt.|
 |:--------:|:------:|
 |![million](/figure/million.gif)|![million](/figure/million-fast.gif)|
 
-- Performance of detection lantency
+### Performance of detection lantency
 -------------------
 ![performancd](/figure/performance.png)
 
 
-- Performance of realtime FPS
+### Performance of realtime FPS
 -------------------
 |Number of spheres| 100K | 200K | 300K |
 |:---------------:|:---:|:------:|:------:|
