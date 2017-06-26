@@ -6,16 +6,16 @@
 -------------------
 ![SaP](/figure/SaP.jpg)
 - CPU version
-	- Sorting
+	- Sorting by axis
 	- Sweep window
 	- Collision detection
-- Worst case: O(n<sub>2</sub>)
+- Worst case: O(n<sup>2</sup>)
 
 ### Parallel Sweep and Prune
 -------------------
 ![GSaP](/figure/GSAP.JPG)
 - GPU version
-	- Sorting
+	- Sorting by axis
 	- <strong>Sweep an object per thread</strong>
 	- Collision detection
 - Worse case: O(n<sup>2</sup>/p)
@@ -41,6 +41,7 @@
 ### Workload Balancing
 -------------------
 ![WorkloadBalance](/figure/WorkloadBalance.JPG)
+![Workload](/figure/workload.png)
 - Workload estimation
 	- Binary search for M<sub>i</sub>
 - Workload balance
@@ -62,6 +63,7 @@
 - Duplicate the objects which touch the C<sub>ri</sub>
 
 -------------------
+![Workspace](/figure/workspace.png)
 - Choose group per object
 - For group C<sub>i</sub>
 	- Mark
@@ -77,6 +79,7 @@
 
 ### Less Workspace Duplication
 -------------------
+![Lessworkspace](/figure/lessworkspace.png)
 - Choose group per object
 - For group C<sub>ri</sub>
 	- Extension mark
@@ -91,6 +94,7 @@
 
 ### Less Global Memory Access
 -------------------
+![Lessglobal](/figure/lessglobal.png)
 - For group C<sub>ri</sub>
 	- Duplicate information to workspace pointer.
 	- Write bake to the object if collision occur.
@@ -108,9 +112,13 @@
 
 ### Real-time Collision Detection of 0.25M Spheres
 -------------------
+![environment](/figure/environment)
+- Useless comparation because of hardward improvement.
+
 |Without Opt.|With Opt.|
 |:--------:|:------:|
 |![million](/figure/million.gif)|![million](/figure/million-fast.gif)|
+- Comparation between our optimazations.
 
 ### Performance of detection lantency
 -------------------
