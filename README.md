@@ -41,7 +41,11 @@
 ### Workload Balancing
 -------------------
 ![WorkloadBalance](/figure/WorkloadBalance.JPG)
+- Make each thread having balanced workload.
+
+-------------------
 ![Workload](/figure/workload.png)
+<img src="figure/workload.png" width="48">
 - Workload estimation
 	- Binary search for M<sub>i</sub>
 - Workload balance
