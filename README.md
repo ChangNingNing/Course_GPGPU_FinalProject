@@ -3,8 +3,15 @@
 ## Algotithm
 
 ### Sweep and Prune
+-------------------
+![SaP](/figure/SaP.JPG)
+- CPU version
+	- Sorting
+	- Sweep window
+	- Collision detection
 
-### Parallel Sweep and Prune
+- Parallel Sweep and Prune
+-------------------
 ![GSaP](/figure/GSAP.JPG)
 
 ## Optimization 1 - Paper
