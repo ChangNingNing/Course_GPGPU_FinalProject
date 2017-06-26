@@ -44,7 +44,7 @@
 - Make each thread having balanced workload.
 
 -------------------
-<img src="figure/workload.png" width="500">
+<img src="figure/workload.png" width="500">;
 - Workload estimation
 	- Binary search for M<sub>i</sub>
 - Workload balance
