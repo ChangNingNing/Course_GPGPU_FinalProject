@@ -68,6 +68,7 @@
 
 -------------------
 <img src="figure/workspace.png" width="500"/>
+
 - Choose group per object
 - For group C<sub>i</sub>
 	- Mark
@@ -84,6 +85,7 @@
 ### Less Workspace Duplication
 -------------------
 <img src="figure/lessworkspace.png" width="500"/>
+
 - Choose group per object
 - For group C<sub>ri</sub>
 	- Extension mark
@@ -99,6 +101,7 @@
 ### Less Global Memory Access
 -------------------
 <img src="figure/lessglobal.png" width="500"/>
+
 - For group C<sub>ri</sub>
 	- Duplicate information to workspace pointer.
 	- Write bake to the object if collision occur.
@@ -117,6 +120,7 @@
 ### Real-time Collision Detection of 0.25M Spheres
 -------------------
 <img src="figure/environment.png" width="500"/>
+
 - Useless comparation because of hardward improvement.
 
 |Without Opt.|With Opt.|
