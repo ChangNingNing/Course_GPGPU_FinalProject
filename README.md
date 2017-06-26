@@ -44,7 +44,6 @@
 - Make each thread having balanced workload.
 
 -------------------
-![Workload](/figure/workload.png)
 <img src="figure/workload.png" width="500">
 - Workload estimation
 	- Binary search for M<sub>i</sub>
@@ -67,7 +66,7 @@
 - Duplicate the objects which touch the C<sub>ri</sub>
 
 -------------------
-![Workspace](/figure/workspace.png)
+<img src="figure/workspace.png" width="500">
 - Choose group per object
 - For group C<sub>i</sub>
 	- Mark
@@ -83,7 +82,7 @@
 
 ### Less Workspace Duplication
 -------------------
-![Lessworkspace](/figure/lessworkspace.png)
+<img src="figure/lessworkspace.png" width="500">
 - Choose group per object
 - For group C<sub>ri</sub>
 	- Extension mark
@@ -98,7 +97,7 @@
 
 ### Less Global Memory Access
 -------------------
-![Lessglobal](/figure/lessglobal.png)
+<img src="figure/lessglobal.png" width="500">
 - For group C<sub>ri</sub>
 	- Duplicate information to workspace pointer.
 	- Write bake to the object if collision occur.
@@ -116,7 +115,7 @@
 
 ### Real-time Collision Detection of 0.25M Spheres
 -------------------
-![environment](/figure/environment)
+<img src="figure/environment.png" width="500">
 - Useless comparation because of hardward improvement.
 
 |Without Opt.|With Opt.|
@@ -126,7 +125,7 @@
 
 ### Performance of detection lantency
 -------------------
-![performancd](/figure/performance.png)
+<img src="figure/performance.png" width="500">
 
 
 ### Performance of realtime FPS
