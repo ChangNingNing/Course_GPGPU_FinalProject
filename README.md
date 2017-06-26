@@ -3,10 +3,12 @@
 -------------------
 This is a final project from a course, GPGPU.  We implement a paper of collision detection based on GPU device.
 You can see the original website of the paper at Reference.
-In this project, we implement the parallel SaP algorithm, and some optimizations which were proposed in the paper.
-Moreover, we propose two optimizations focus on <strong>global memory access</strong> by our own.
-After all, we can detect collision between the number of 250K spheres in the <strong>real-time</strong>.
-And we have 3.2x improvement in the number of 1M spheres.
+
+In this project, we implemented the parallel SaP algorithm, and some optimizations which were proposed in the paper.
+Moreover, we proposed two optimizations focus on <strong>global memory access</strong> by our own.
+
+After all, we could detect collision between the number of 250K spheres in the <strong>real-time</strong>.
+And we had 3.2x improvement in the number of 1M spheres.
 
 ## Algotithm
 
