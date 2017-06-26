@@ -45,7 +45,7 @@
 
 -------------------
 ![Workload](/figure/workload.png)
-<img src="figure/workload.png" width="48">
+<img src="figure/workload.png" width="300">
 - Workload estimation
 	- Binary search for M<sub>i</sub>
 - Workload balance
