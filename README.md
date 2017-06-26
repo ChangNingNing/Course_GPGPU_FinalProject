@@ -1,7 +1,12 @@
 # Real-time Collision Culling of a Million Spheres on GPU
 ## Introduction
 -------------------
-This is a final project from a course, GPGPU.  We implement a paper of collision detection based on GPU device.  You can see the original website of the paper at Reference.
+This is a final project from a course, GPGPU.  We implement a paper of collision detection based on GPU device.
+You can see the original website of the paper at Reference.
+In this project, we implement the parallel SaP algorithm, and some optimizations which were proposed in the paper.
+Moreover, we propose two optimizations focus on <strong>global memory access</strong> by our own.
+After all, we can detect collision between the number of 250K spheres in the <strong>real-time</strong>.
+And we have 3.2x improvement in the number of 1M spheres.
 
 ## Algotithm
 
