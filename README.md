@@ -45,6 +45,7 @@
 
 -------------------
 <img src="figure/workload.png" width="500"/>
+
 - Workload estimation
 	- Binary search for M<sub>i</sub>
 - Workload balance
